@@ -65,6 +65,36 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
     pools[2].percentage = (FACTOR * 86) / 100;
     _router = IUniswapV2Router02(DEXROUTER);
   }
+
+  function getAllPools() external view returns (PoolInfo[] memory) {
+    return pools;
+  }
+
+  function createPool(
+    uint256 _lockupSeconds,
+    uint256 _percentage
+  ) external onlyOwner {
+    require(_totalPercentages + _percentage <= FACTOR, 'max percentage');
+    _totalPercentages += _percentage;
+    pools.push(
+      PoolInfo({
+        lockupPeriod: _lockupSeconds,
+        percentage: _percentage,
+        totalStakedUsers: 0,
+        totalSharesDeposited: 0,
+        rewardsPerShare: 0,
+        totalDistributed: 0,
+        totalRewards: 0
+      })
+    );
+  }
+
+  function removePool(uint256 _idx) external onlyOwner {
+    PoolInfo memory _pool = pools[_idx];
+    _totalPercentages -= _pool.percentage;
+    pools[_idx] = pools[pools.length - 1];
+    pools.pop();
+  }
   
   function stake(uint256 pid, uint256 _amount) external nonReentrant {
     IERC20(token).safeTransferFrom(_msgSender(), address(this), _amount);
