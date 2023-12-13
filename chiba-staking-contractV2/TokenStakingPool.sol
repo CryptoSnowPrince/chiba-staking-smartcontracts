@@ -18,9 +18,9 @@ contract TokenStakingPool is IPoolExtension, ITokenStakingPool, Ownable {
 
   uint[] private _totalStaked;
 
-  mapping(address => mapping(uint256, uint)) public staked;
-  mapping(address => mapping(uint256, uint)) private _rewardsToClaim;
-  mapping(address => mapping(uint256, uint)) public _userStartTime;
+  mapping(address => mapping(uint256 => uint)) public staked;
+  mapping(address => mapping(uint256 => uint)) private _rewardsToClaim;
+  mapping(address => mapping(uint256 => uint)) public _userStartTime;
 
   modifier onlyPool() {
     require(_msgSender() == mainPool, 'Unauthorized');
@@ -31,13 +31,10 @@ contract TokenStakingPool is IPoolExtension, ITokenStakingPool, Ownable {
    * @notice constructor contains all the parameters of the staking platform
    * @dev all parameters are immutable
    * @param _token, address of the token to be staked
-   * @param _fixedAPR, the fixed APY (in %) 10 = 10%, 50 = 50%
    */
-  constructor(address _mainPool, IERC20 _token, uint[] _fixedAPR) {
+  constructor(address _mainPool, IERC20 _token) {
     mainPool = _mainPool;
     token = _token;
-    for (uint256 _i; _i < _fixedAPR.length; _i++)
-      fixedAPR[_i] = _fixedAPR[_i];
   }
 
   function setShare(
@@ -104,17 +101,17 @@ contract TokenStakingPool is IPoolExtension, ITokenStakingPool, Ownable {
    * Cannot claim initial stakeholders deposit
    */
   function withdrawResidualBalance() external onlyOwner {
-    uint totalStakedOfContract = totalStakedOfContract();
-    uint residualBalance = token.balanceOf(address(this)) - totalStakedOfContract;
+    uint totalStakedAmount = totalStakedOfContract();
+    uint residualBalance = token.balanceOf(address(this)) - totalStakedAmount;
     require(residualBalance > 0, 'No residual Balance to withdraw');
     token.safeTransfer(_msgSender(), residualBalance);
   }
 
-  function totalStakedOfContract() internal onlyOwner {
-    uint totalStakedOfContract = 0;
+  function totalStakedOfContract() internal onlyOwner view returns (uint) {
+    uint totalStakedAmount = 0;
     for (uint256 _i; _i < _totalStaked.length; _i++)
-      totalStakedOfContract += _totalStaked[_i];
-    return totalStakedOfContract;
+      totalStakedAmount += _totalStaked[_i];
+    return totalStakedAmount;
   }
 
   /**

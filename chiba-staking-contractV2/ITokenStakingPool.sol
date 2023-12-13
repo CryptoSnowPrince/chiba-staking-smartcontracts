@@ -10,14 +10,14 @@ interface ITokenStakingPool {
    * @param stakeHolder, address of the user to check
    * @return uint amount of the total deposited Tokens by the caller
    */
-  function amountStaked(address stakeHolder) external view returns (uint);
+  function amountStaked(uint256 pid, address stakeHolder) external view returns (uint);
 
   /**
    * @notice function that returns the amount of total Staked tokens
    * on the smart contract
    * @return uint amount of the total deposited Tokens
    */
-  function totalDeposited() external view returns (uint);
+  function totalDeposited(uint256 pid) external view returns (uint);
 
   /**
    * @notice function that returns the amount of pending rewards
@@ -25,13 +25,13 @@ interface ITokenStakingPool {
    * @param stakeHolder, address of the user to be checked
    * @return uint amount of claimable rewards
    */
-  function rewardOf(address stakeHolder) external view returns (uint);
+  function rewardOf(uint256 pid, address stakeHolder) external view returns (uint);
 
   /**
    * @notice function that claims pending rewards
    * @dev transfer the pending rewards to the `msg.sender`
    */
-  function claimRewards() external;
+  function claimRewards(uint256 pid) external;
 
   /**
    * @dev Emitted when `amount` tokens are deposited into
