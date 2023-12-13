@@ -14,7 +14,7 @@ contract TokenStakingPool is IPoolExtension, ITokenStakingPool, Ownable {
 
   address public immutable mainPool;
   IERC20 public immutable token;
-  uint[] public fixedAPR;
+  uint8[] public fixedAPR;
 
   uint[] private _totalStaked;
 
@@ -32,9 +32,12 @@ contract TokenStakingPool is IPoolExtension, ITokenStakingPool, Ownable {
    * @dev all parameters are immutable
    * @param _token, address of the token to be staked
    */
-  constructor(address _mainPool, IERC20 _token) {
+  constructor(address _mainPool, IERC20 _token, uint8[] memory _newAPR) {
     mainPool = _mainPool;
     token = _token;
+    for (uint8 _i; _i < _newAPR.length; _i++) {
+      fixedAPR.push(_newAPR[_i]);
+    }
   }
 
   function setShare(
