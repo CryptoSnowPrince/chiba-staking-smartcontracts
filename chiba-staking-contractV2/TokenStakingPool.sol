@@ -41,17 +41,12 @@ contract TokenStakingPool is IPoolExtension, ITokenStakingPool, Ownable {
     }
   }
 
-  function addTokenPool (uint8 _addedAPR) external override onlyPool {
+  function addTokenPool(uint8 _addedAPR) external onlyPool {
     fixedAPR.push(_addedAPR);
     _totalStaked.push(0);
   }
 
-  function setShare(
-    uint256 pid,
-    address wallet,
-    uint256 balanceChange,
-    bool isRemoving
-  ) external override onlyPool {
+  function setShare(uint256 pid, address wallet, uint256 balanceChange, bool isRemoving) external override onlyPool {
     if (isRemoving) {
       _withdraw(pid, wallet, balanceChange);
     } else {

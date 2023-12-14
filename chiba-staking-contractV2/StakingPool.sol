@@ -52,11 +52,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
     // pool 0: 14 days, 1.5% (1209600, 150)
     // pool 1: 28 days, 12.5% (2419200, 1250)
     // pool 2: 56 days, 86% (4838400, 8600)
-    constructor(
-        address _token,
-        uint256[] memory _lockupPeriod,
-        uint256[] memory _percentage
-    ) {
+    constructor(address _token, uint256[] memory _lockupPeriod, uint256[] memory _percentage) {
         token = _token;
         require(_lockupPeriod.length == _percentage.length, "INVALID_LENGTH");
         for (uint8 _i; _i < _lockupPeriod.length; _i++) {
@@ -99,11 +95,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         _setShare(pid, _msgSender(), _amount, false);
     }
 
-    function stakeForWallets(
-        uint256 pid,
-        address[] memory _wallets,
-        uint256[] memory _amounts
-    ) external nonReentrant {
+    function stakeForWallets(uint256 pid, address[] memory _wallets, uint256[] memory _amounts) external nonReentrant {
         require(_wallets.length == _amounts.length, "INSYNC");
         uint256 _totalAmount;
         for (uint256 _i; _i < _wallets.length; _i++) {
@@ -122,12 +114,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         _setShare(pid, _msgSender(), _amount, true);
     }
 
-    function _setShare(
-        uint256 pid,
-        address wallet,
-        uint256 balanceUpdate,
-        bool isRemoving
-    ) internal {
+    function _setShare(uint256 pid, address wallet, uint256 balanceUpdate, bool isRemoving) internal {
         if (address(extension) != address(0)) {
             try extension.setShare(pid, wallet, balanceUpdate, isRemoving) {} catch {}
         }
@@ -140,11 +127,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         }
     }
 
-    function _addShares(
-        uint256 pid,
-        address wallet,
-        uint256 amount
-    ) private {
+    function _addShares(uint256 pid, address wallet, uint256 amount) private {
         if (shares[wallet][pid].amount > 0) {
             _distributeReward(pid, wallet, false, 0);
         }
@@ -161,11 +144,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         );
     }
 
-    function _removeShares(
-        uint256 pid,
-        address wallet,
-        uint256 amount
-    ) private {
+    function _removeShares(uint256 pid, address wallet, uint256 amount) private {
         require(
             shares[wallet][pid].amount > 0 &&
                 amount <= shares[wallet][pid].amount,
@@ -213,64 +192,37 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         }
     }
 
-    function _depositRewards(
-        uint256 pid,
-        address _wallet,
-        uint256 _amountETH
-    ) internal {
+    function _depositRewards(uint256 pid, address _wallet, uint256 _amountETH) internal {
         require(_amountETH > 0, "ETH");
         require(pools[pid].totalSharesDeposited > 0, "SHARES");
         pools[pid].totalRewards += _amountETH;
-        pools[pid].rewardsPerShare +=
-            (MULTIPLIER * _amountETH) /
-            pools[pid].totalSharesDeposited;
+        pools[pid].rewardsPerShare += (MULTIPLIER * _amountETH) / pools[pid].totalSharesDeposited;
         emit DepositRewards(pid, _wallet, _amountETH);
     }
 
-    function _distributeReward(
-        uint256 pid,
-        address _wallet,
-        bool _compound,
-        uint256 _compoundMinTokensToReceive
-    ) internal {
+    function _distributeReward(uint256 pid, address _wallet, bool _compound, uint256 _compoundMinTokensToReceive) internal {
         if (shares[_wallet][pid].amount == 0) {
             return;
         }
         shares[_wallet][pid].stakedTime = block.timestamp; // reset every claim
         uint256 _amountWei = getUnpaid(pid, _wallet);
         rewards[_wallet][pid].realised += _amountWei;
-        rewards[_wallet][pid].excluded = _cumulativeRewards(
-            pid,
-            shares[_wallet][pid].amount
-        );
+        rewards[_wallet][pid].excluded = _cumulativeRewards(pid, shares[_wallet][pid].amount);
         if (_amountWei > 0) {
             pools[pid].totalDistributed += _amountWei;
             if (_compound) {
-                _compoundRewards(
-                    pid,
-                    _wallet,
-                    _amountWei,
-                    _compoundMinTokensToReceive
-                );
+                _compoundRewards(pid, _wallet, _amountWei, _compoundMinTokensToReceive);
             } else {
                 uint256 _balBefore = address(this).balance;
                 (bool success, ) = payable(_wallet).call{value: _amountWei}("");
                 require(success, "DIST0");
-                require(
-                    address(this).balance >= _balBefore - _amountWei,
-                    "DIST1"
-                );
+                require(address(this).balance >= _balBefore - _amountWei, "DIST1");
             }
             emit DistributeReward(pid, _wallet, _amountWei, _compound);
         }
     }
 
-    function _compoundRewards(
-        uint256 pid,
-        address _wallet,
-        uint256 _wei,
-        uint256 _minTokensToReceive
-    ) internal {
+    function _compoundRewards(uint256 pid, address _wallet, uint256 _wei, uint256 _minTokensToReceive) internal {
         address[] memory path = new address[](2);
         path[0] = _router.WETH();
         path[1] = token;
@@ -283,22 +235,12 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
             address(this),
             block.timestamp
         );
-        uint256 _compoundAmount = _token.balanceOf(address(this)) -
-            _tokenBalBefore;
+        uint256 _compoundAmount = _token.balanceOf(address(this)) - _tokenBalBefore;
         _setShare(pid, _wallet, _compoundAmount, false);
     }
 
-    function claimReward(
-        uint256 pid,
-        bool _compound,
-        uint256 _compMinTokensToReceive
-    ) external nonReentrant {
-        _distributeReward(
-            pid,
-            _msgSender(),
-            _compound,
-            _compMinTokensToReceive
-        );
+    function claimReward(uint256 pid, bool _compound, uint256 _compMinTokensToReceive) external nonReentrant {
+        _distributeReward(pid, _msgSender(), _compound, _compMinTokensToReceive);
         emit ClaimReward(pid, _msgSender());
     }
 
@@ -312,11 +254,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         emit ClaimReward(pid, _wallet);
     }
 
-    function getUnpaid(uint256 pid, address wallet)
-        public
-        view
-        returns (uint256)
-    {
+    function getUnpaid(uint256 pid, address wallet) public view returns (uint256) {
         if (shares[wallet][pid].amount == 0) {
             return 0;
         }
@@ -331,11 +269,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         return earnedRewards - rewardsExcluded;
     }
 
-    function _cumulativeRewards(uint256 pid, uint256 share)
-        internal
-        view
-        returns (uint256)
-    {
+    function _cumulativeRewards(uint256 pid, uint256 share) internal view returns (uint256) {
         return (share * pools[pid].rewardsPerShare) / MULTIPLIER;
     }
 
