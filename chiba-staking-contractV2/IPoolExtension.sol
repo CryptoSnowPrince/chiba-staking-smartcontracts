@@ -10,6 +10,6 @@ interface IPoolExtension {
   ) external;
   
   function addTokenPool(
-    uint256 _addedAPR
+    uint8 _addedAPR
   ) external;
 }

@@ -68,7 +68,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         return pools;
     }
 
-    function createPool(uint256 _lockupSeconds, uint256 _percentage, uint256 _addedAPR) public onlyOwner {
+    function createPool(uint256 _lockupSeconds, uint256 _percentage, uint8 _addedAPR) public onlyOwner {
         require(_totalPercentages + _percentage <= FACTOR, "max percentage");
         _totalPercentages += _percentage;
         pools.push(
@@ -83,7 +83,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
             })
         );
         if (address(extension) != address(0)) {
-            try extension.addTokenPool(_addedAPR) {} catch {};
+            try extension.addTokenPool(_addedAPR) {} catch {}
         }
     }
 
