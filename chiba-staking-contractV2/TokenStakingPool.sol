@@ -37,7 +37,13 @@ contract TokenStakingPool is IPoolExtension, ITokenStakingPool, Ownable {
     token = _token;
     for (uint8 _i; _i < _newAPR.length; _i++) {
       fixedAPR.push(_newAPR[_i]);
+      _totalStaked.push[0];
     }
+  }
+
+  function addTokenPool (uint256 _addedAPR) external override onlyPool {
+    fixedAPR.push(_addedAPR);
+    _totalStaked.push[0];
   }
 
   function setShare(

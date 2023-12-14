@@ -12,8 +12,7 @@ import "./IPoolExtension.sol";
 contract StakingPool is Context, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    IUniswapV2Router02 immutable _router =
-        IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    IUniswapV2Router02 immutable _router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
     uint256 constant MULTIPLIER = 10**36;
     uint256 constant FACTOR = 10000; // 10000: 100% 100: 1%
     address public token;
@@ -47,17 +46,8 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
     event Stake(uint256 pid, address indexed user, uint256 amount);
     event Unstake(uint256 pid, address indexed user, uint256 amount);
     event ClaimReward(uint256 pid, address user);
-    event DepositRewards(
-        uint256 pid,
-        address indexed user,
-        uint256 amountTokens
-    );
-    event DistributeReward(
-        uint256 pid,
-        address indexed user,
-        uint256 amount,
-        bool _wasCompounded
-    );
+    event DepositRewards(uint256 pid, address indexed user, uint256 amountTokens);
+    event DistributeReward(uint256 pid, address indexed user, uint256 amount, bool _wasCompounded);
 
     // pool 0: 14 days, 1.5% (1209600, 150)
     // pool 1: 28 days, 12.5% (2419200, 1250)
@@ -70,7 +60,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         token = _token;
         require(_lockupPeriod.length == _percentage.length, "INVALID_LENGTH");
         for (uint8 _i; _i < _lockupPeriod.length; _i++) {
-            createPool(_lockupPeriod[_i], _percentage[_i]);
+            createPool(_lockupPeriod[_i], _percentage[_i], 0);            
         }
     }
 
@@ -78,10 +68,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         return pools;
     }
 
-    function createPool(uint256 _lockupSeconds, uint256 _percentage)
-        public
-        onlyOwner
-    {
+    function createPool(uint256 _lockupSeconds, uint256 _percentage, uint256 _addedAPR) public onlyOwner {
         require(_totalPercentages + _percentage <= FACTOR, "max percentage");
         _totalPercentages += _percentage;
         pools.push(
@@ -95,6 +82,9 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
                 totalRewards: 0
             })
         );
+        if (address(extension) != address(0)) {
+            try extension.addTokenPool(_addedAPR) {} catch {};
+        }
     }
 
     function removePool(uint256 _idx) external onlyOwner {
@@ -139,9 +129,7 @@ contract StakingPool is Context, Ownable, ReentrancyGuard {
         bool isRemoving
     ) internal {
         if (address(extension) != address(0)) {
-            try
-                extension.setShare(pid, wallet, balanceUpdate, isRemoving)
-            {} catch {}
+            try extension.setShare(pid, wallet, balanceUpdate, isRemoving) {} catch {}
         }
         if (isRemoving) {
             _removeShares(pid, wallet, balanceUpdate);

@@ -8,4 +8,8 @@ interface IPoolExtension {
     uint256 balanceChange,
     bool isRemoving
   ) external;
+  
+  function addTokenPool(
+    uint256 _addedAPR
+  ) external;
 }
